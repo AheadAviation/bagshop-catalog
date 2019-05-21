@@ -1,0 +1,30 @@
+version: '3'
+services:
+
+  catalog:
+    image: timcurless/bagshop-catalog
+    ports:
+      - "8083"
+    networks:
+      - frontend
+      - backend
+    environment:
+      MYSQL_ADDR: catalog-db
+      MYSQL_USERNAME: testuser
+      MYSQL_PASSWORD: testpass
+
+  catalog-db:
+    image: mysql:8.0
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    networks:
+      - backend
+    environment:
+      MYSQL_USER: testuser
+      MYSQL_PASSWORD: testpass
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      MYSQL_DATABASE: catalog
+
+networks:
+  frontend:
+  backend:
