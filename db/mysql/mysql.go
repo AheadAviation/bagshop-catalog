@@ -1,12 +1,13 @@
 package mysql
 
 import (
-	"database/sql"
 	"fmt"
 
-	_ "github.com/go-sql-driver/mysql"
-
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"github.com/namsral/flag"
+
+	"github.com/AheadAviation/bagshop-catalog/item"
 )
 
 var (
@@ -23,25 +24,30 @@ func init() {
 }
 
 type MySQL struct {
-	MySQLc *sql.DB
+	MySQLc *gorm.DB
 }
 
 func (m *MySQL) Init() error {
 	var dsn string
 	if username != "" {
-		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s", username, password, addr, db)
+		dsn = fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+			username, password, addr, db)
 	} else {
-		dsn = fmt.Sprintf("@tcp(%s)/%s", addr, db)
+		dsn = fmt.Sprintf("@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+			addr, db)
 	}
 
 	var err error
-	m.MySQLc, err = sql.Open("mysql", dsn)
+	// m.MySQLc, err = sql.Open("mysql", dsn)
+	m.MySQLc, err = gorm.Open("mysql", dsn)
 	if err != nil {
 		return err
 	}
+	defer m.MySQLc.Close()
+	m.MySQLc.AutoMigrate(&item.Item{})
 	return nil
 }
 
 func (m *MySQL) Ping() error {
-	return m.MySQLc.Ping()
+	return m.MySQLc.DB().Ping()
 }
