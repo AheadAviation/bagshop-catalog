@@ -14,6 +14,7 @@ var ErrNotFound = errors.New("not found")
 
 type Service interface {
 	CreateItem(name, description string, price float32, count int) (string, error)
+	GetItems() ([]item.Item, error)
 	Health() []Health
 }
 
@@ -40,6 +41,11 @@ func (s *fixedService) CreateItem(name, description string, price float32,
 	i.Count = count
 	err := db.CreateItem(&i)
 	return i.ID, err
+}
+
+func (s *fixedService) GetItems() ([]item.Item, error) {
+	its, err := db.GetItems()
+	return its, err
 }
 
 func (s *fixedService) Health() []Health {

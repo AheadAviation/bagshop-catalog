@@ -24,10 +24,11 @@ func MakeHTTPHandler(e Endpoints, logger log.Logger, tracer stdopentracing.Trace
 	}
 
 	// POST /api/v1/catalog Create a new catalog item
+	// GET /api/v1/catalog Get all items from catalog
 	// GET /api/v1/catalog/health Health Check
 	// GET /api/v1/catalog/metrics Prometheus-style metrics
 
-	r.Methods("POST").PathPrefix("/api/v1/catalog").Handler(httptransport.NewServer(
+	r.Methods("POST").PathPrefix("/api/v1/catalog/items").Handler(httptransport.NewServer(
 		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:    "CreateItem",
 			Timeout: 30 * time.Second,
@@ -35,6 +36,14 @@ func MakeHTTPHandler(e Endpoints, logger log.Logger, tracer stdopentracing.Trace
 		decodeCreateItemRequest,
 		encodeResponse,
 		append(options, httptransport.ServerBefore(opentracing.HTTPToContext(tracer, "POST /api/v1/catalog", logger)))...,
+	))
+	r.Methods("GET").PathPrefix("/api/v1/catalog/items").Handler(httptransport.NewServer(
+		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "GetItems",
+			Timeout: 30 * time.Second,
+		}))(e.GetItemsEndpoint),
+		decodeGetItemsRequest,
+		encodeResponse,
 	))
 	r.Methods("GET").PathPrefix("/api/v1/catalog/health").Handler(httptransport.NewServer(
 		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
@@ -76,6 +85,10 @@ func decodeCreateItemRequest(_ context.Context, r *http.Request) (interface{}, e
 func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	w.Header().Set("Content-Type", "application/hal+json")
 	return json.NewEncoder(w).Encode(response)
+}
+
+func decodeGetItemsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	return struct{}{}, nil
 }
 
 func decodeHealthRequest(_ context.Context, r *http.Request) (interface{}, error) {
