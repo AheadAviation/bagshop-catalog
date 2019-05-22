@@ -20,6 +20,7 @@ var (
 type Database interface {
 	Init() error
 	CreateItem(*item.Item) error
+	GetItems() ([]item.Item, error)
 	Ping() error
 }
 
@@ -53,6 +54,10 @@ func Register(name string, db Database) {
 
 func CreateItem(i *item.Item) error {
 	return DefaultDB.CreateItem(i)
+}
+
+func GetItems() ([]item.Item, error) {
+	return DefaultDB.GetItems()
 }
 
 func Ping() error {

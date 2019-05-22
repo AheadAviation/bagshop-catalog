@@ -51,6 +51,12 @@ func (m *MySQL) CreateItem(i *item.Item) error {
 	return m.MySQLc.Create(i).Error
 }
 
+func (m *MySQL) GetItems() ([]item.Item, error) {
+	its := make([]item.Item, 0)
+	r := m.MySQLc.Find(&its)
+	return its, r.Error
+}
+
 func (m *MySQL) Ping() error {
 	return m.MySQLc.DB().Ping()
 }

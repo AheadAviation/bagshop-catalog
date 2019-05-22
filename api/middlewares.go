@@ -5,6 +5,8 @@ import (
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/metrics"
+
+	"github.com/AheadAviation/bagshop-catalog/item"
 )
 
 type Middleware func(Service) Service
@@ -35,6 +37,18 @@ func (mw loggingMiddleware) CreateItem(name, description string, price float32,
 		)
 	}(time.Now())
 	return mw.next.CreateItem(name, description, price, count)
+}
+
+func (mw loggingMiddleware) GetItems() (its []item.Item, err error) {
+	defer func(begin time.Time) {
+		mw.logger.Log(
+			"method", "GetItems",
+			"result", len(its),
+			"error", err,
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+	return mw.next.GetItems()
 }
 
 func (mw loggingMiddleware) Health() (health []Health) {
@@ -70,6 +84,15 @@ func (s *instrumentingService) CreateItem(name, description string, price float3
 	}(time.Now())
 
 	return s.Service.CreateItem(name, description, price, count)
+}
+
+func (s *instrumentingService) GetItems() ([]item.Item, error) {
+	defer func(begin time.Time) {
+		s.requestCount.With("method", "get_items").Add(1)
+		s.requestLatency.With("method", "get_items").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+
+	return s.Service.GetItems()
 }
 
 func (s *instrumentingService) Health() []Health {

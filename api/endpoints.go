@@ -6,16 +6,20 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/kit/tracing/opentracing"
 	stdopentracing "github.com/opentracing/opentracing-go"
+
+	"github.com/AheadAviation/bagshop-catalog/item"
 )
 
 type Endpoints struct {
 	CreateItemEndpoint endpoint.Endpoint
+	GetItemsEndpoint   endpoint.Endpoint
 	HealthEndpoint     endpoint.Endpoint
 }
 
 func MakeEndpoints(s Service, tracer stdopentracing.Tracer) Endpoints {
 	return Endpoints{
-		CreateItemEndpoint: opentracing.TraceServer(tracer, "POST /api/v1/catalog")(MakeCreateItemEndpoint(s)),
+		CreateItemEndpoint: opentracing.TraceServer(tracer, "POST /api/v1/catalog/items")(MakeCreateItemEndpoint(s)),
+		GetItemsEndpoint:   opentracing.TraceServer(tracer, "GET /api/v1/catalog/items")(MakeGetItemsEndpoint(s)),
 		HealthEndpoint:     opentracing.TraceServer(tracer, "GET /api/v1/catalog/health")(MakeHealthEndpoint(s)),
 	}
 }
@@ -29,6 +33,17 @@ func MakeCreateItemEndpoint(s Service) endpoint.Endpoint {
 		req := request.(createItemRequest)
 		id, err := s.CreateItem(req.Name, req.Description, req.Price, req.Count)
 		return postResponse{ID: id}, err
+	}
+}
+
+func MakeGetItemsEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		var span stdopentracing.Span
+		span, ctx = stdopentracing.StartSpanFromContext(ctx, "get items")
+		span.SetTag("service", "catalog")
+		defer span.Finish()
+		its, err := s.GetItems()
+		return itemsResponse{Items: its}, err
 	}
 }
 
@@ -52,6 +67,10 @@ type createItemRequest struct {
 
 type postResponse struct {
 	ID string `json:"id"`
+}
+
+type itemsResponse struct {
+	Items []item.Item `json:"items"`
 }
 
 type healthRequest struct {
