@@ -23,9 +23,19 @@ func MakeHTTPHandler(e Endpoints, logger log.Logger, tracer stdopentracing.Trace
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
+	// POST /api/v1/catalog Create a new catalog item
 	// GET /api/v1/catalog/health Health Check
 	// GET /api/v1/catalog/metrics Prometheus-style metrics
 
+	r.Methods("POST").PathPrefix("/api/v1/catalog").Handler(httptransport.NewServer(
+		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
+			Name:    "CreateItem",
+			Timeout: 30 * time.Second,
+		}))(e.CreateItemEndpoint),
+		decodeCreateItemRequest,
+		encodeResponse,
+		append(options, httptransport.ServerBefore(opentracing.HTTPToContext(tracer, "POST /api/v1/catalog", logger)))...,
+	))
 	r.Methods("GET").PathPrefix("/api/v1/catalog/health").Handler(httptransport.NewServer(
 		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:    "Health",
@@ -54,15 +64,24 @@ func encodeError(_ context.Context, err error, w http.ResponseWriter) {
 	})
 }
 
+func decodeCreateItemRequest(_ context.Context, r *http.Request) (interface{}, error) {
+	item := createItemRequest{}
+	err := json.NewDecoder(r.Body).Decode(&item)
+	if err != nil {
+		return nil, err
+	}
+	return item, nil
+}
+
+func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	w.Header().Set("Content-Type", "application/hal+json")
+	return json.NewEncoder(w).Encode(response)
+}
+
 func decodeHealthRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	return struct{}{}, nil
 }
 
 func encodeHealthResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	return encodeResponse(ctx, w, response.(healthResponse))
-}
-
-func encodeResponse(_ context.Context, w http.ResponseWriter, response interface{}) error {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	return json.NewEncoder(w).Encode(response)
 }

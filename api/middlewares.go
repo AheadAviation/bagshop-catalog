@@ -23,6 +23,20 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
+func (mw loggingMiddleware) CreateItem(name, description string, price float32,
+	count int) (id string, err error) {
+	defer func(begin time.Time) {
+		mw.logger.Log(
+			"method", "CreateItem",
+			"item_name", name,
+			"item_id", id,
+			"error", err,
+			"took", time.Since(begin),
+		)
+	}(time.Now())
+	return mw.next.CreateItem(name, description, price, count)
+}
+
 func (mw loggingMiddleware) Health() (health []Health) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
@@ -46,6 +60,16 @@ func NewInstrumentingService(requestCount metrics.Counter, requestLatency metric
 		requestLatency: requestLatency,
 		Service:        s,
 	}
+}
+
+func (s *instrumentingService) CreateItem(name, description string, price float32,
+	count int) (id string, err error) {
+	defer func(begin time.Time) {
+		s.requestCount.With("method", "create_item").Add(1)
+		s.requestLatency.With("method", "create_item").Observe(time.Since(begin).Seconds())
+	}(time.Now())
+
+	return s.Service.CreateItem(name, description, price, count)
 }
 
 func (s *instrumentingService) Health() []Health {

@@ -5,6 +5,8 @@ import (
 	"fmt"
 
 	"github.com/namsral/flag"
+
+	"github.com/AheadAviation/bagshop-catalog/item"
 )
 
 var (
@@ -17,6 +19,7 @@ var (
 
 type Database interface {
 	Init() error
+	CreateItem(*item.Item) error
 	Ping() error
 }
 
@@ -46,6 +49,10 @@ func Set() error {
 
 func Register(name string, db Database) {
 	DBTypes[name] = db
+}
+
+func CreateItem(i *item.Item) error {
+	return DefaultDB.CreateItem(i)
 }
 
 func Ping() error {

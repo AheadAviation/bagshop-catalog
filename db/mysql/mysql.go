@@ -43,9 +43,12 @@ func (m *MySQL) Init() error {
 	if err != nil {
 		return err
 	}
-	defer m.MySQLc.Close()
 	m.MySQLc.AutoMigrate(&item.Item{})
 	return nil
+}
+
+func (m *MySQL) CreateItem(i *item.Item) error {
+	return m.MySQLc.Create(i).Error
 }
 
 func (m *MySQL) Ping() error {

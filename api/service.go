@@ -4,12 +4,16 @@ import (
 	"errors"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/AheadAviation/bagshop-catalog/db"
+	"github.com/AheadAviation/bagshop-catalog/item"
 )
 
 var ErrNotFound = errors.New("not found")
 
 type Service interface {
+	CreateItem(name, description string, price float32, count int) (string, error)
 	Health() []Health
 }
 
@@ -23,6 +27,19 @@ type fixedService struct{}
 
 func NewFixedService() Service {
 	return &fixedService{}
+}
+
+func (s *fixedService) CreateItem(name, description string, price float32,
+	count int) (string, error) {
+	i := item.Item{}
+	uid, _ := uuid.NewRandom()
+	i.ID = uid.String()
+	i.Name = name
+	i.Description = description
+	i.Price = price
+	i.Count = count
+	err := db.CreateItem(&i)
+	return i.ID, err
 }
 
 func (s *fixedService) Health() []Health {
