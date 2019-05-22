@@ -23,18 +23,19 @@ func MakeHTTPHandler(e Endpoints, logger log.Logger, tracer stdopentracing.Trace
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	// GET /health Health Check
+	// GET /api/v1/catalog/health Health Check
+	// GET /api/v1/catalog/metrics Prometheus-style metrics
 
-	r.Methods("GET").PathPrefix("/health").Handler(httptransport.NewServer(
+	r.Methods("GET").PathPrefix("/api/v1/catalog/health").Handler(httptransport.NewServer(
 		circuitbreaker.Gobreaker(gobreaker.NewCircuitBreaker(gobreaker.Settings{
 			Name:    "Health",
 			Timeout: 30 * time.Second,
 		}))(e.HealthEndpoint),
 		decodeHealthRequest,
 		encodeHealthResponse,
-		append(options, httptransport.ServerBefore(opentracing.HTTPToContext(tracer, "GET /health", logger)))...,
+		append(options, httptransport.ServerBefore(opentracing.HTTPToContext(tracer, "GET /api/v1/catalog/health", logger)))...,
 	))
-	r.Handle("/metrics", promhttp.Handler())
+	r.Handle("/api/v1/catalog/metrics", promhttp.Handler())
 	return r
 }
 
