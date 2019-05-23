@@ -1,7 +1,10 @@
 package mysql
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -44,7 +47,7 @@ func (m *MySQL) Init() error {
 		return err
 	}
 	m.MySQLc.AutoMigrate(&item.Item{})
-	return nil
+	return m.seedData()
 }
 
 func (m *MySQL) CreateItem(i *item.Item) error {
@@ -59,4 +62,26 @@ func (m *MySQL) GetItems() ([]item.Item, error) {
 
 func (m *MySQL) Ping() error {
 	return m.MySQLc.DB().Ping()
+}
+
+func (m *MySQL) seedData() error {
+	its := make([]item.Item, 0)
+	m.MySQLc.Find(&its)
+	if len(its) == 0 {
+		sd, err := ioutil.ReadFile("/seed-data.json")
+		if err != nil {
+			return err
+		}
+
+		json.Unmarshal(sd, &its)
+
+		for i := range its {
+			err := m.CreateItem(&its[i])
+			if err != nil {
+				return err
+			}
+		}
+		log.Printf("Seeded %d items into the database", len(its))
+	}
+	return nil
 }

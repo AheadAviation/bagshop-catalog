@@ -1,0 +1,7 @@
+[
+  {"id": "f7f70edd-7c7e-4e4d-ade9-04b6b1d117ce", "name": "Wheelie Bag", "description": "Suitcase with wheels", "price": 112.88, "count": 76},
+  {"id": "82c5d0af-b852-4fe2-9a88-926920cf7305", "name": "Samsonite Bag", "description": "Samsonite! I was way off!", "price": 167.01, "count": 22},
+  {"id": "8547481c-ac77-4b47-a0fb-678991ed43ff", "name": "Suitcase", "description": "A premium suitcase", "price": 59.99, "count": 512},
+  {"id": "56f35103-dd6e-4056-8d52-34abf499aae1", "name": "Tumi Garment Bag", "description": "Holds a couple suits", "price": 125.00, "count": 45},
+  {"id": "81ae735b-9ec8-45cd-972d-5b6ac48e19cb", "name": "Weekender Duffel Bag", "description": "Just right for a weekend away", "price": 36.50, "count": 421}
+]

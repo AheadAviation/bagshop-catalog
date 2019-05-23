@@ -43,7 +43,7 @@ func (mw loggingMiddleware) GetItems() (its []item.Item, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log(
 			"method", "GetItems",
-			"result", len(its),
+			"num_items", len(its),
 			"error", err,
 			"took", time.Since(begin),
 		)
