@@ -1,7 +1,10 @@
 package mysql
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
+	"log"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
@@ -65,16 +68,20 @@ func (m *MySQL) seedData() error {
 	its := make([]item.Item, 0)
 	m.MySQLc.Find(&its)
 	if len(its) == 0 {
-		i := item.Item{
-			Name:        "Suitcase",
-			Description: "Shiny Suitcase",
-			Price:       79.95,
-			Count:       142,
-		}
-		err := m.CreateItem(&i)
+		sd, err := ioutil.ReadFile("/seed-data.json")
 		if err != nil {
 			return err
 		}
+
+		json.Unmarshal(sd, &its)
+
+		for i := range its {
+			err := m.CreateItem(&its[i])
+			if err != nil {
+				return err
+			}
+		}
+		log.Printf("Seeded %d items into the database", len(its))
 	}
 	return nil
 }
